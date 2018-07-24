@@ -1,5 +1,4 @@
 # mysqldiff
-<<<<<<< HEAD
  
   ### 本项目主要用来对比两个数据库，生成对应的改动sql语句。目前只支持mysql数据库。
 
@@ -38,12 +37,3 @@
     mysqldiff run -S mysql://user:pass@host[:port]/dbname -T a.js 
 
 
-
-
-
-
-
-
-
-=======
->>>>>>> 045aa83278720fbb01b8a54abce76c31511f4a7c
