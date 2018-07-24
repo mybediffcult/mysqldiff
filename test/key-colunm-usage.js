@@ -1,1 +1,1 @@
-require('./common').devFunc('SELECT * FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=?', ['effect_dev']);
+require('./common').devFunc('SELECT * FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=?', ['databaseName']);

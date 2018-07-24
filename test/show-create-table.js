@@ -1,1 +1,1 @@
-require('./common').devFunc('show create table `effect`');
+require('./common').devFunc('show create table `tableName`');

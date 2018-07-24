@@ -1,1 +1,1 @@
-require('./common').devFunc('show full columns from `effect`');
+require('./common').devFunc('show full columns from `tableName`');
