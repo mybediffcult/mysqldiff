@@ -9,8 +9,3 @@ node_modules
 # IDE
 .vscode
 .idea
-
-# client build
-/client/build
-/server/static
-/server/app/view
