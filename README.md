@@ -1,1 +1,1 @@
-# sqldiff
+# mysqldiff
