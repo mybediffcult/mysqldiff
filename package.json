@@ -1,17 +1,16 @@
 {
-  "name": "sqldiff",
+  "name": "mysqldiff",
   "version": "1.0.0",
   "description": "diff mysql with multiple deal functions",
   "main": "index.js",
   "bin": {
-    "sqldiff": "./lib/bin/index.js"
+    "mysqldiff": "./lib/bin/index.js"
   },
   "directories": {
     "lib": "lib",
     "test": "test"
   },
   "dependencies": {
-    "byted-service": "^1.2.4",
     "commander": "^2.16.0",
     "extend": "^3.0.1",
     "is-type-of": "^1.2.0",
