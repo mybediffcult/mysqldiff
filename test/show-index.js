@@ -1,0 +1,1 @@
+require('./common').devFunc('SHOW INDEXES IN `effect`');

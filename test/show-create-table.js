@@ -1,0 +1,1 @@
+require('./common').devFunc('show create table `effect`');

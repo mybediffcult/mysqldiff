@@ -1,0 +1,31 @@
+{
+  "name": "sqldiff",
+  "version": "1.0.0",
+  "description": "diff mysql with multiple deal functions",
+  "main": "index.js",
+  "bin": {
+    "sqldiff": "./lib/bin/index.js"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "dependencies": {
+    "byted-service": "^1.2.4",
+    "commander": "^2.16.0",
+    "extend": "^3.0.1",
+    "is-type-of": "^1.2.0",
+    "mysql": "^2.10.2",
+    "pync": "^1.0.1",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "dbdiff"
+  ],
+  "author": "armyliao",
+  "license": "ISC"
+}
