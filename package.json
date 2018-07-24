@@ -1,8 +1,7 @@
 {
-  "name": "mysqldiff",
+  "name": "dbdiff2",
   "version": "1.0.0",
   "description": "diff mysql with multiple deal functions",
-  "main": "index.js",
   "bin": {
     "mysqldiff": "./lib/bin/index.js"
   },

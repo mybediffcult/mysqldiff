@@ -1,13 +1,13 @@
 # mysqldiff
  
-  ### 本项目主要用来对比两个数据库，生成对应的改动sql语句。目前只支持mysql数据库。
+   本项目主要用来对比两个数据库，生成对应的改动sql语句。目前只支持mysql数据库。
 
-  ### 使用方法
+   使用方法
     npm install 
     
     mysqldiff run -S mysql://user:pass@host[:port]/dbname -T mysql://user:pass@host[:port]/dbname
 
-  ### 可选参数设置
+    可选参数设置
 
     //源数据库，参数类型可以为mysql://user:pass@host[:port]/dbname 或 数据库配置的js文件
     -S,--source  <source>  
@@ -31,7 +31,7 @@
     -F --file  <file>
 
 
- ### 例子
+  例子
 
     //数据库参数类型可混合,没有配置-C的话，a.js应该在当前执行目录下能找到 
     mysqldiff run -S mysql://user:pass@host[:port]/dbname -T a.js 
