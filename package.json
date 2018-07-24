@@ -1,6 +1,6 @@
 {
   "name": "dbdiff2",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "diff mysql with multiple deal functions",
   "bin": {
     "mysqldiff": "./lib/bin/index.js"
@@ -22,7 +22,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "dbdiff","dbdiff2"
+    "dbdiff",
+    "dbdiff2"
   ],
   "author": "armyliao",
   "license": "ISC",
