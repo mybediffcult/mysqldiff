@@ -2,21 +2,11 @@
 
 
 // 数据库层的方法 包括添加删除表 和表的操作
-const database = {
+exports.initDatabase = ()=>({
     drop: [],
     create: [],
     tables: {},
-};
-
-// //表中内部的操作
-// exports.table={
-//     name:'',
-//     createIndex:[],
-//     dropIndex:[],
-//     dropColumn:[],
-//     alertColumn:[],
-
-// }
+});
 
 const _initTable = ()=>{
     return {
@@ -32,12 +22,10 @@ const _initTable = ()=>{
 };
 
 // 对table 进行插入操作
-exports.setTableData = (tableName, key, value)=>{
+exports.setTableData = (database, tableName, key, value)=>{
     if (!database.tables[tableName]) {
         database.tables[tableName] = _initTable();
     }
     value['warn'] = value['warn'] === undefined ? false : true;
     database.tables[tableName][key].push(value);
 };
-
-exports.database = database;

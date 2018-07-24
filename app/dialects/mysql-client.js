@@ -46,11 +46,11 @@ class MysqlClient {
     }
 
     find (sql, params = []) {
-        return this.query(sql, params).then((result) => result.rows);
+        return this.query(sql, params).then((result) =>result.rows);
     }
 
     findOne (sql, params = []) {
-        return this.query(sql, params).then((result) => result.rows[0]);
+        return this.query(sql, params).then((result) =>result.rows[0]);
     }
 
 

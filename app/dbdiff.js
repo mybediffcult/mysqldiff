@@ -4,32 +4,50 @@ const dialects = require('./dialects');
 // const dedent = require('dedent')
 const sqlObject = require('./common/sqlObject');
 
-
+const database = sqlObject.initDatabase();
 class DbDiff {
-    _log (sql, level) {
-        this.sql.push({ sql, level });
+    compare (conn1, conn2) {
+        return Promise.all([
+            dialects.describeDatabase(conn1),
+            dialects.describeDatabase(conn2),
+        ])
+            .then((results) => {
+                var db1 = results[0];
+                var db2 = results[1];
+                this.compareSchemas(db1, db2);
+            })
+            .then(()=>database);
     }
+    compareSchemas (db1, db2) {
+        this.sql = [];
+        this._dialect = db1.dialect;
+        this._quotation = {
+            mysql: '`',
+            postgres: '"',
+        }[this._dialect];
 
-    _drop (sql) {
-        this._log(sql, 3);
+        db1.tables.forEach((table) => {
+            var t = this._findTable(db2, table);
+            if (!t) {
+                database.drop.push(this._fullName(table));
+            }
+        });
+
+        db2.tables.forEach((table) => {
+            var t = this._findTable(db1, table);
+            if (!t) {
+                database.create.push(table.tableInfo);
+            } else {
+                this._compareTables(t, table);
+                this._compareIndexes(t, table);
+            }
+        });
+
+        db2.tables.forEach((table) => {
+            var t = this._findTable(db1, table);
+            this._compareConstraints(t, table);
+        });
     }
-
-    _warn (sql) {
-        this._log(sql, 2);
-    }
-
-    _safe (sql) {
-        this._log(sql, 1);
-    }
-
-    _comment (sql) {
-        this._log(sql, 0);
-    }
-
-    _quote (name) {
-        return this._quotation + name + this._quotation;
-    }
-
     _compareTables (table1, table2) {
         var tableName = this._fullName(table1);
 
@@ -40,15 +58,13 @@ class DbDiff {
         var diff2 = _.difference(columNames2, columNames1);
 
         diff1.forEach((columnName) => {
-            sqlObject.setTableData(tableName, 'dropColumn', this._quote(columnName));
-            // this._drop(`ALTER TABLE ${tableName} DROP COLUMN ${this._quote(columnName)};`)
+            sqlObject.setTableData(database, tableName, 'dropColumn', this._quote(columnName));
         });
 
         diff2.forEach((columnName) => {
             var col = table2.columns.find((column) => column.name === columnName);
             var description = this._columnDescription(col);
-            sqlObject.setTableData(tableName, 'addColumn', {columnName: this._quote(columnName), description, comment: '\'' + col.comment + '\''});
-            // this._safe(`ALTER TABLE ${tableName} ADD COLUMN ${this._quote(columnName)} ${description};`)
+            sqlObject.setTableData(database, tableName, 'addColumn', {columnName: this._quote(columnName), description, comment: '\'' + col.comment + '\''});
         });
 
         var common = _.intersection(columNames1, columNames2);
@@ -59,40 +75,11 @@ class DbDiff {
             if (!_.isEqual(col1, col2)) {
                 var warn = (col1.type !== col2.type || (col1.nullable !== col2.nullable && !col2.nullable)) ? true : false;
                 var extra = col2.extra ? ' ' + col2.extra : '';
-                // var comment = col1.type !== col2.type ? `-- Previous data type was ${col1.type}\n` : ''
                 var description = this._columnDescription(col2);
-                sqlObject.setTableData(tableName, 'modifyColumn', {columnName: this._quote(columnName), comment: '\'' + col2.comment + '\'', description, extra, warn});
-                // func.bind(this)(`${comment}ALTER TABLE ${tableName} MODIFY ${this._quote(columnName)} ${description}${extra};`)
+                sqlObject.setTableData(database, tableName, 'modifyColumn', {columnName: this._quote(columnName), comment: '\'' + col2.comment + '\'', description, extra, warn});
             }
-            // if (col1.type !== col2.type) {
-            //   this._warn(dedent`
-            //     -- Previous data type was ${col1.type}
-            //     ALTER TABLE ${tableName} ALTER COLUMN ${this._quote(columnName)} SET DATA TYPE ${col2.type};
-            //   `)
-            // }
-            // if (col1.nullable !== col2.nullable) {
-            //   if (col2.nullable) {
-            //     this._safe(`ALTER TABLE ${tableName} ALTER COLUMN ${this._quote(columnName)} DROP NOT NULL;`)
-            //   } else {
-            //     this._warn(`ALTER TABLE ${tableName} ALTER COLUMN ${this._quote(columnName)} SET NOT NULL;`)
-            //   }
-            // }
         });
     }
-
-    _createIndex (table, index) {
-        var tableName = this._fullName(table);
-        var keys = index.columns.map((key) => `${this._quote(key)}`).join(',');
-        // mysql
-        sqlObject.setTableData(tableName, 'createIndex', {keys, name: this._quote(index.name), type: index.type});
-        // this._safe(`CREATE INDEX ${this._quote(index.name)} USING ${index.type} ON ${tableName} (${keys});`)
-    }
-
-    _dropIndex (table, index) {
-        sqlObject.setTableData(this._fullName(table), 'dropIndex', this._fullName(index));
-        // this._safe(`DROP INDEX ${this._fullName(index)} ON ${this._fullName(table)};`)
-    }
-
     _compareIndexes (table1, table2) {
         var indexNames1 = this._indexNames(table1);
         var indexNames2 = this._indexNames(table2);
@@ -123,13 +110,20 @@ class DbDiff {
         || index1.unique !== index2.unique) {
                 var index = index2;
                 // 删除上一个创建一个新的
-                // this._comment(`-- Index ${this._fullName(index)} needs to be changed`)
                 this._dropIndex(table1, index);
                 this._createIndex(table1, index);
             }
         });
     }
+    _createIndex (table, index) {
+        var tableName = this._fullName(table);
+        var keys = index.columns.map((key) => `${this._quote(key)}`).join(',');
+        sqlObject.setTableData(database, tableName, 'createIndex', {keys, name: this._quote(index.name), type: index.type});
+    }
 
+    _dropIndex (table, index) {
+        sqlObject.setTableData(database, this._fullName(table), 'dropIndex', this._fullName(index));
+    }
 
     _compareConstraints (table1, table2) {
         var tableName = this._fullName(table2);
@@ -137,98 +131,32 @@ class DbDiff {
             var constraint1 = table1 && table1.constraints.find((cons) => constraint2.name === cons.name);
             if (constraint1) {
                 if (_.isEqual(constraint1, constraint2)) { return; }
-                sqlObject.setTableData(tableName, 'dropIndex', this._quote(constraint2.name));
-                // this._safe(`ALTER TABLE ${tableName} DROP INDEX ${this._quote(constraint2.name)};`)
+                sqlObject.setTableData(database, tableName, 'dropIndex', this._quote(constraint2.name));
                 constraint1 = null;
             }
             if (!constraint1) {
                 var keys = constraint2.columns.map((s) => `${this._quote(s)}`).join(', ');
-                // var func = (table1 ? this._warn : this._safe).bind(this)
                 var warn = table1 ? true : false;
                 var fullName = this._quote(constraint2.name);
                 if (constraint2.type === 'primary') {
                     if (this._dialect === 'mysql') { fullName = 'foo'; }
-                    sqlObject.setTableData(tableName, 'addPrimaryConstraint', {name: fullName, keys, warn});
-                    // func(`ALTER TABLE ${tableName} ADD CONSTRAINT ${fullName} PRIMARY KEY (${keys});`)
+                    sqlObject.setTableData(database, tableName, 'addPrimaryConstraint', {name: fullName, keys, warn});
                 } else if (constraint2.type === 'unique') {
-                    sqlObject.setTableData(tableName, 'addUniqueConstraint', {name: fullName, keys, warn});
-                    // func(`ALTER TABLE ${tableName} ADD CONSTRAINT ${fullName} UNIQUE (${keys});`)
+                    sqlObject.setTableData(database, tableName, 'addUniqueConstraint', {name: fullName, keys, warn});
                 } else if (constraint2.type === 'foreign') {
                     var foreignKeys = constraint2.referenced_columns.map((s) => `${this._quote(s)}`).join(', ');
-                    sqlObject.setTableData(tableName, 'addForeignConstraint', {name: fullName, keys, references: this._quote(constraint2.referenced_table), foreignKeys, warn});
-                    // func(`ALTER TABLE ${tableName} ADD CONSTRAINT ${fullName} FOREIGN KEY (${keys}) REFERENCES ${this._quote(constraint2.referenced_table)} (${foreignKeys});`)
+                    sqlObject.setTableData(database, tableName, 'addForeignConstraint', {name: fullName, keys, references: this._quote(constraint2.referenced_table), foreignKeys, warn});
                 }
             }
         });
     }
-
-    compareSchemas (db1, db2) {
-        this.sql = [];
-        this._dialect = db1.dialect;
-        this._quotation = {
-            mysql: '`',
-            postgres: '"',
-        }[this._dialect];
-        // this._compareSequences(db1, db2)
-
-        db1.tables.forEach((table) => {
-            var t = this._findTable(db2, table);
-            if (!t) {
-                sqlObject.database.drop.push(this._fullName(table));
-                // this._drop(`DROP TABLE ${this._fullName(table)};`)
-            }
-        });
-
-        db2.tables.forEach((table) => {
-            var t = this._findTable(db1, table);
-            var tableName = this._fullName(table);
-            if (!t) {
-                // var columns = table.columns.map((col) => {
-                //     var extra = col.extra;
-                //     if (extra === 'auto_increment') {
-                //         extra = ' PRIMARY KEY AUTO_INCREMENT';
-                //         var constraint = table.constraints.find((constraints) => constraints.type === 'primary');
-                //         table.constraints.splice(table.constraints.indexOf(constraint), 1);
-                //     }
-                //     return `\n  ${this._quote(col.name)}  ${this._columnDescription(col)}  ${extra}  COMMENT '${col.comment}'`;
-                // });
-                // sqlObject.database.create.push({tableName, text: columns.join(',')});
-
-                // // this._safe(`CREATE TABLE ${tableName} (${columns.join(',')}\n);`)
-
-                // var indexNames2 = this._indexNames(table);
-                // indexNames2.forEach((indexName) => {
-                //     var index = table.indexes.find((index) => index.name === indexName);
-                //     this._createIndex(table, index);
-                // });
-                sqlObject.database.create.push(table.tableInfo);
-            } else {
-                this._compareTables(t, table);
-                this._compareIndexes(t, table);
-            }
-        });
-
-        db2.tables.forEach((table) => {
-            var t = this._findTable(db1, table);
-            this._compareConstraints(t, table);
-        });
+    _quote (name) {
+        return this._quotation + name + this._quotation;
     }
 
-    compare (conn1, conn2) {
-        return Promise.all([
-            dialects.describeDatabase(conn1),
-            dialects.describeDatabase(conn2),
-        ])
-            .then((results) => {
-                var db1 = results[0];
-                var db2 = results[1];
-                this.compareSchemas(db1, db2);
-            });
+    _findTable (db, table) {
+        return db.tables.find((t) => t.name === table.name && t.schema === table.schema);
     }
-
-    // _commentOut (sql) {
-    //   return sql.split('\n').map((line) => line.substring(0, 2) === '--' ? line : `-- ${line}`).join('\n')
-    // }
 
     _columnNames (table) {
         return table.columns.map((col) => col.name).sort();
@@ -259,20 +187,7 @@ class DbDiff {
         return this._quote(obj.name);
     }
 
-    _findTable (db, table) {
-        return db.tables.find((t) => t.name === table.name && t.schema === table.schema);
-    }
 
-    // commands (type) {
-    //   var level = 1
-    //   if (type === 'drop') level = 3
-    //   else if (type === 'warn') level = 2
-    //   return this.sql.map((sql) => {
-    //     return sql.level > level
-    //       ? this._commentOut(sql.sql)
-    //       : sql.sql
-    //   }).join('\n\n')
-    // }
 }
 
 module.exports = DbDiff;

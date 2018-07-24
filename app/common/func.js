@@ -10,16 +10,16 @@ const tableMergeFunc = {
     addUniqueConstraint: ({name, keys})=>`ADD CONSTRAINT ${name} UNIQUE (${keys})`,
     addForeignConstraint: ({name, keys, references, foreignKeys})=>`ADD CONSTRAINT ${name} FOREIGN KEY (${keys}) REFERENCES ${references} (${foreignKeys})`,
 };
-const tableIndependentFunc={
-    createIndex: ({name, type, keys},tableName)=>`ALERT ${tableName} ADD INDEX ${name} USING ${type} (${keys});\n`,
-    dropIndex: (index,tableName)=>`ALERT ${tableName} DROP INDEX ${index};\n`,
-    dropColumn: (columnName,tableName)=>`ALERT ${tableName} DROP COLUMN ${columnName};\n`,
-    addColumn: ({columnName, description, comment},tableName)=>`ALERT ${tableName} ADD COLUMN ${columnName} ${description}  COMMENT ${comment};\n`,
-    modifyColumn: ({columnName, comment, description, extra},tableName)=>`ALERT ${tableName} MODIFY ${columnName} ${description} ${extra} COMMENT ${comment};\n`,
-    addPrimaryConstraint: ({name, keys},tableName)=>`ALERT ${tableName} ADD CONSTRAINT ${name} PRIMARY KEY (${keys});\n`,
-    addUniqueConstraint: ({name, keys},tableName)=>`ALERT ${tableName} ADD CONSTRAINT ${name} UNIQUE (${keys});\n`,
-    addForeignConstraint: ({name, keys, references, foreignKeys},tableName)=>`ALERT ${tableName} ADD CONSTRAINT ${name} FOREIGN KEY (${keys}) REFERENCES ${references} (${foreignKeys});\n`,
-}
+const tableIndependentFunc = {
+    createIndex: ({name, type, keys}, tableName)=>`ALERT ${tableName} ADD INDEX ${name} USING ${type} (${keys});\n`,
+    dropIndex: (index, tableName)=>`ALERT ${tableName} DROP INDEX ${index};\n`,
+    dropColumn: (columnName, tableName)=>`ALERT ${tableName} DROP COLUMN ${columnName};\n`,
+    addColumn: ({columnName, description, comment}, tableName)=>`ALERT ${tableName} ADD COLUMN ${columnName} ${description}  COMMENT ${comment};\n`,
+    modifyColumn: ({columnName, comment, description, extra}, tableName)=>`ALERT ${tableName} MODIFY ${columnName} ${description} ${extra} COMMENT ${comment};\n`,
+    addPrimaryConstraint: ({name, keys}, tableName)=>`ALERT ${tableName} ADD CONSTRAINT ${name} PRIMARY KEY (${keys});\n`,
+    addUniqueConstraint: ({name, keys}, tableName)=>`ALERT ${tableName} ADD CONSTRAINT ${name} UNIQUE (${keys});\n`,
+    addForeignConstraint: ({name, keys, references, foreignKeys}, tableName)=>`ALERT ${tableName} ADD CONSTRAINT ${name} FOREIGN KEY (${keys}) REFERENCES ${references} (${foreignKeys});\n`,
+};
 const dropTable = (table)=>`DROP TABLE ${table};\n`;
 // const createTable = ({tableName, text})=>`CREATE TABLE ${tableName} (${text});\n`;
 const createTable = (table)=>`${table};\n`;
@@ -31,20 +31,21 @@ module.exports = {
     tableIndependentFunc,
     dropTable,
     createTable,
-    mergeFunc: (data,externalFunc,showWarn = 'true')=>{
+    mergeFunc: (data, externalFunc, showWarn = 'true')=>{
         let result = '';
-        const {dropTable,createTable}={dropTable,createTable,externalFunc}
-        const reaFunc={...tableMergeFunc,...externalFunc}
+        const drop = externalFunc[dropTable] ? externalFunc[dropTable] : dropTable;
+        const create = externalFunc[createTable] ? externalFunc[createTable] : createTable;
+        const realFunc = {...tableMergeFunc, ...externalFunc};
         for (let [key, value] of Object.entries(data)) {
             switch (key) {
                 case 'drop':
                     for (let tableName of value) {
-                        result += dropTable(tableName);
+                        result += drop(tableName);
                     }
                     break;
                 case 'create':
                     for (let table of value) {
-                        result += createTable(table);
+                        result += create(table);
                     }
                     break;
                 case 'tables':
@@ -53,7 +54,7 @@ module.exports = {
                         for (let [operationName, operationArray] of Object.entries(operation)) {
                             for (let item of operationArray) {
                                 if (showWarn === 'true' || !item.warn) {
-                                    result += tableMergeFunc[operationName](item) + ',';
+                                    result += realFunc[operationName](item) + ',';
                                 }
                             }
                         }
@@ -64,20 +65,21 @@ module.exports = {
         }
         return result;
     },
-    independentFunc: (data,externalFunc,showWarn = 'true')=>{
+    independentFunc: (data, externalFunc, showWarn = 'true')=>{
         let result = '';
-        const {dropTable,createTable}={dropTable,createTable,externalFunc}
-        const reaFunc={...tableIndependentFunc,...externalFunc}
+        const drop = externalFunc[dropTable] ? externalFunc[dropTable] : dropTable;
+        const create = externalFunc[createTable] ? externalFunc[createTable] : createTable;
+        const realFunc = {...tableIndependentFunc, ...externalFunc};
         for (let [key, value] of Object.entries(data)) {
             switch (key) {
                 case 'drop':
                     for (let tableName of value) {
-                        result += dropTable(tableName);
+                        result += drop(tableName);
                     }
                     break;
                 case 'create':
                     for (let table of value) {
-                        result += createTable(table);
+                        result += create(table);
                     }
                     break;
                 case 'tables':
@@ -85,7 +87,7 @@ module.exports = {
                         for (let [operationName, operationArray] of Object.entries(operation)) {
                             for (let item of operationArray) {
                                 if (showWarn === 'true' || !item.warn) {
-                                    result += tableMergeFunc[operationName](item)
+                                    result += realFunc[operationName](item, tableName);
                                 }
                             }
                         }

@@ -9,7 +9,7 @@ const DbDiff = exports.DbDiff = require('./dbdiff');
 
 const loadConfig = (name)=>{
     const cwd = process.cwd();
-    const configPath = path.resolve(cwd + '/config', name);
+    const configPath = path.resolve(cwd, name);
     if (!fs.existsSync(configPath)) {
         return {};
     }
@@ -18,21 +18,21 @@ const loadConfig = (name)=>{
         config = config({});
     }
     assert(is.object(config), 'config must be object or function to return object.');
-    return config;
+    return config.sequelize ? config.sequelize : config;
 };
-const getConsul = (env)=>{
+const getConsul = (configPath, env)=>{
     const consul = {
         host: '127.0.0.1',
         port: 2280,
     };
 
-    const aggregatedDefaultConfigConsul = loadConfig('config.default.js').consul;
+    const aggregatedDefaultConfigConsul = loadConfig(configPath + 'config.default.js').consul;
 
-    const aggregatedEnvConfigConsul = loadConfig(`config.${env}.js`).consul;
+    const aggregatedEnvConfigConsul = loadConfig(configPath + `config.${env}.js`).consul;
 
-    const scatteredDefaultConfigConsul = loadConfig('consul.default.js');
+    const scatteredDefaultConfigConsul = loadConfig(configPath + 'consul.default.js');
 
-    const scatteredEnvConfig = loadConfig(`consul.${env}.js`);
+    const scatteredEnvConfig = loadConfig(configPath + `consul.${env}.js`);
 
 
     return {
@@ -44,14 +44,14 @@ const getConsul = (env)=>{
     };
 };
 
-const getDataBase = async (conf, env)=>{
+const getDataBase = async (conf, configPath, env)=>{
     try {
         const reg = /^([^\.]+)\.([^\.]+)\.js$/;
         if (!reg.exec(conf)) {
             return conf;
         }
         const cwd = process.cwd();
-        let prod = require(path.resolve(cwd + '/config', conf));
+        let prod = require(path.resolve(cwd, configPath + conf));
         if (is.function(prod)) {
             prod = prod({root: cwd});
         }
@@ -68,11 +68,13 @@ const getDataBase = async (conf, env)=>{
             };
         }
 
-        const consul = new Consul(getConsul(env));
-
+        const consul = new Consul(getConsul(configPath, env));
         const databaseConf = options.replication.write;
 
         const paths =  await consul.first(databaseConf.psm);
+        if (!paths) {
+            throw new Error('can not find your sql address,please check your consul Configuration.');
+        }
         return {
             dialect: 'mysql',
             user: databaseConf.username,
@@ -86,15 +88,16 @@ const getDataBase = async (conf, env)=>{
     }
 };
 
-function baseCheckParams(source, target, warn, processed) {
+function baseCheckParams({source, target, warn, processed, merge, dealFile}) {
     let result = '';
     const regStr = /^mysql:\/\/\w+:\w+@(\d{1,3}\.){3}\d{1,3}:\d+\/\w+$/;
     const regFile = /^([^\.]+)\.([^\.]+)\.js$/;
+    const regDealFile = /\.js$/;
     if (!regStr.test(source) && !regFile.test(source)) {
-        result += ' parma  source is not a Correct format,please check it \n';
+        result += ' parma  source is not a Correct format,it must be like mysql://user:pass@host[:port]/dbname or  a path to a.b.js,please check it \n';
     }
     if (!regStr.test(target) && !regFile.test(target)) {
-        result += ' parma target is not a Correct format,please check it \n';
+        result += ' parma target is not a Correct format,it must be like mysql://user:pass@host[:port]/dbname or a path to a.b.js,please check it \n';
     }
     if (warn !== 'true' && warn !== 'false') {
         result += `parma warn must true or false ,but now  warn is ${warn} \n `;
@@ -102,38 +105,51 @@ function baseCheckParams(source, target, warn, processed) {
     if (processed !== 'true' && processed !== 'false') {
         result += `parma processed must true or false ,but now processed is ${processed} \n `;
     }
+    if (merge !== 'true' && merge !== 'false') {
+        result += `parma merge must true or false ,but now merge is ${processed} \n `;
+    }
+    if (dealFile && !regDealFile.test(dealFile)) {
+        result += 'parma  dealfile is not a Correct format,it must be like a path to a.js,please check it \n';
+    }
     return result;
 }
 
+function _getFileName() {
+    const date =  new Date();
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hour = date.getHours();
+    const min = date.getMinutes();
+    return 'dbdiff' + [year, month, day, hour, min].join('_');
+}
+
 module.exports = function (env = 'dev', cmd) {
-    const {source, target, warn, processed} = cmd;
+    const {source, target, warn, processed, merge, file, configPath} = cmd;
+    // 根据dealFile 获取文件exports todo
+    const realConfigPath = configPath && configPath.lastIndexOf('/') !== configPath.length - 1 ? configPath + '/' : configPath;
     Promise.resolve()
         .then(()=>{
-            const paramsError = baseCheckParams(source, target, warn, processed);
+            const paramsError = baseCheckParams(cmd);
             if (paramsError) {
                 throw new Error(paramsError);
             }
         })
         .then(async ()=>{
-            const sourceConf = await getDataBase(source, env);
-            const targetConf = await getDataBase(target, env);
+            const sourceConf = await getDataBase(source, realConfigPath, env);
+            const targetConf = await getDataBase(target, realConfigPath, env);
             const dbdiff = new DbDiff();
-            //将结果放到内存中 直接返回
-            await dbdiff.compare(targetConf, sourceConf);
+            // 将结果放到内存中 直接返回
+            return await dbdiff.compare(targetConf, sourceConf);
         })
-        .then(()=>{
-            const result = require('./common/sqlObject').database;
+        .then((result)=>{
             const cwd = process.cwd();
-            const date =  new Date();
-            const year = date.getFullYear();
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            const hour = date.getHours();
-            const min = date.getMinutes();
-            const fileName = 'dbdiff' + [year, month, day, hour, min].join('_');
+            const fileName = _getFileName();
             if (processed === 'true') {
                 const func = require('./common/func');
-                fs.writeFileSync(cwd + `/${fileName}.sql`, func.dealFunc(result, warn));
+                const dealFunc = merge === 'true' ? func.mergeFunc : func.independentFunc;
+                const externalFunc = file ? require(path.resolve(cwd, file)) : {};
+                fs.writeFileSync(cwd + `/${fileName}.sql`, dealFunc(result, externalFunc, warn));
                 return;
             }
             fs.writeFileSync(cwd + `/${fileName}.sql`, JSON.stringify(result));
