@@ -1,4 +1,4 @@
-const mysqlClient = require('../app/dialects/mysql-client');
+const mysqlClient = require('../lib/dialects/mysql-client');
 
 const options = 'mysql://user:pass@host[:port]/dbname1';
 const devOptions = 'mysql://user:pass@host[:port]/dbname1';
