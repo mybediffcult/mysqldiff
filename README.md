@@ -83,8 +83,8 @@
    }
   ```
 
-  #### 自己处理文件格式,请[参考](https://github.com/mybediffcult/mysqldiff/blob/master/lib/common/func.js)。可从中选取部分配置
-  #### To handle the file format yourself, please refer to [Reference](https://github.com/mybediffcult/mysqldiff/blob/master/lib/common/func.js)
+  #### 自己处理文件格式,请[参考](https://github.com/mybediffcult/mysqldiff/blob/master/lib/common/func.js)。可从中选取部分配置,结果会将自己文件里的配置与原处理方式merge。
+  #### To handle the file format yourself, please refer to [Reference](https://github.com/mybediffcult/mysqldiff/blob/master/lib/common/func.js). Some configurations can be selected from it, and the result will be merged with the original processing in the file.
 
   ```
   {
