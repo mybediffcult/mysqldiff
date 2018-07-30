@@ -90,14 +90,14 @@
   {
     dropTable : (table)=>`DROP TABLE ${table};\n`,
     createTable : (table)=>`${table};\n`,
-    createIndex: ({name, type, keys}, tableName)=>`ALERT ${tableName} ADD INDEX ${name} USING ${type} (${keys});\n`,
-    dropIndex: (index, tableName)=>`ALERT ${tableName} DROP INDEX ${index};\n`,
-    dropColumn: (columnName, tableName)=>`ALERT ${tableName} DROP COLUMN ${columnName};\n`,
-    addColumn: ({columnName, description, comment}, tableName)=>`ALERT ${tableName} ADD COLUMN ${columnName} ${description}  COMMENT ${comment};\n`,
-    modifyColumn: ({columnName, comment, description, extra}, tableName)=>`ALERT ${tableName} MODIFY ${columnName} ${description} ${extra} COMMENT ${comment};\n`,
-    addPrimaryConstraint: ({name, keys}, tableName)=>`ALERT ${tableName} ADD CONSTRAINT ${name} PRIMARY KEY (${keys});\n`,
-    addUniqueConstraint: ({name, keys}, tableName)=>`ALERT ${tableName} ADD CONSTRAINT ${name} UNIQUE (${keys});\n`,
-    addForeignConstraint: ({name, keys, references, foreignKeys}, tableName)=>`ALERT ${tableName} ADD CONSTRAINT ${name} FOREIGN KEY (${keys}) REFERENCES ${references} (${foreignKeys});\n`,
+    createIndex: ({name, type, keys}, tableName)=>`ALTER ${tableName} ADD INDEX ${name} USING ${type} (${keys});\n`,
+    dropIndex: (index, tableName)=>`ALTER ${tableName} DROP INDEX ${index};\n`,
+    dropColumn: (columnName, tableName)=>`ALTER ${tableName} DROP COLUMN ${columnName};\n`,
+    addColumn: ({columnName, description, comment}, tableName)=>`ALTER ${tableName} ADD COLUMN ${columnName} ${description}  COMMENT ${comment};\n`,
+    modifyColumn: ({columnName, comment, description, extra}, tableName)=>`ALTER ${tableName} MODIFY ${columnName} ${description} ${extra} COMMENT ${comment};\n`,
+    addPrimaryConstraint: ({name, keys}, tableName)=>`ALTER ${tableName} ADD CONSTRAINT ${name} PRIMARY KEY (${keys});\n`,
+    addUniqueConstraint: ({name, keys}, tableName)=>`ALTER ${tableName} ADD CONSTRAINT ${name} UNIQUE (${keys});\n`,
+    addForeignConstraint: ({name, keys, references, foreignKeys}, tableName)=>`ALTER ${tableName} ADD CONSTRAINT ${name} FOREIGN KEY (${keys}) REFERENCES ${references} (${foreignKeys});\n`,
 
   }
   ```
