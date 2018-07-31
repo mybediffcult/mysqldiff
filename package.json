@@ -1,6 +1,6 @@
 {
   "name": "dbdiff2",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "diff mysql with multiple deal functions",
   "main": "index.js",
   "bin": {
