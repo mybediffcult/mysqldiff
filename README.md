@@ -7,16 +7,16 @@
   #### 通过npm全局下载 (Install globally with npm)
   ```bash
     npm install dbdiff2 -g
-   ``` 
-   ### 使用方法use
-   #### 使用数据库描述字符串,-s指的是目前修改的库，-t指的是你将要修改的目的库。
-   #### Use the database description string, -s refers to the currently modified library, and -t refers to the destination library you are about to modify.
+  ``` 
+  ### 使用方法use
+  #### 使用数据库描述字符串,-s指的是目前修改的库，-t指的是你将要修改的目的库。
+  #### Use the database description string, -s refers to the currently modified library, and -t refers to the destination library you are about to modify.
 
-   ```bash
+  ```bash
     mysqldiff run -s mysql://username:password@host[:port]/name -t mysql://username:password@host[:port]/name
   ```
-   #### 你也可以使用js文件的形式当作参数，不过js文件必须返回一个包含username、password、host、port、name的对象
-   #### You can also use the form of the js file as a parameter, but the js file must return an object containing username, password, host, port, name.
+  #### 你也可以使用js文件的形式当作参数，不过js文件必须返回一个包含username、password、host、port、name的对象
+  #### You can also use the form of the js file as a parameter, but the js file must return an object containing username, password,  host, port, name.
   
   ```bash
     mysqldiff run -s a.js -t mysql://username:password@host[:port]/name
@@ -43,7 +43,13 @@
   #### The path to the database configuration file, specifying files that are not in the current process directory. This configuration is unified for source and target
   ```
     -c --configPath <configPath>
-  ```  
+  ``` 
+  #### 输出文件路径，指定输出结果的路径
+  #### Output the path of the file, specifying the path of the output result
+  ```
+    -d --dist <distPath>
+  ```
+ 
   #### 是否对结果进行处理，默认是处理。不处理的话，返回对比的结果对象。true(默认):处理,false:不处理
   #### Whether to process the result, the default is processing. If not processed, return the result object of the comparison. True (default): processing, false: no processing
   ```  
@@ -56,8 +62,8 @@
     -w --warn  [warn] 
   ```
 
-   #### 选择处理策略，是否将同一表的操作聚合到一个语句。true(默认):聚合，false:分散
-   #### Select a processing strategy to aggregate the operations of the same table into a single statement. True (default): aggregate, false: scattered
+  #### 选择处理策略，是否将同一表的操作聚合到一个语句。true(默认):聚合，false:分散
+  #### Select a processing strategy to aggregate the operations of the same table into a single statement. True (default): aggregate, false: scattered
    ```
     -m --merge  [merge]
    ``` 
