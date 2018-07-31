@@ -1,11 +1,11 @@
 # dbdiff2
  
-   ## 本项目主要用来对比两个数据库，生成对应的改动sql语句。目前只支持mysql数据库。
-   ## This project is mainly used to compare two databases and generate corresponding changes to the sql statement. Currently only mysql database is supported.
+  ## 本项目主要用来对比两个数据库，生成对应的改动sql语句。目前只支持mysql数据库。
+  ## This project is mainly used to compare two databases and generate corresponding changes to the sql statement. Currently only mysql database is supported.
 
-   ### 下载 Installing
-   #### 通过npm全局下载 (Install globally with npm)
-   ```bash
+  ### 下载 Installing
+  #### 通过npm全局下载 (Install globally with npm)
+  ```bash
     npm install dbdiff2 -g
    ``` 
    ### 使用方法use
