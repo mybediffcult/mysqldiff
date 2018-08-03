@@ -73,8 +73,8 @@
   ```
     -f --file  <file>
   ```  
-#### 支持忽略部分表的对比，具体配置请在执行目录下创建.dbignore文件，里面使用正则方式写过滤规则，满足条件的就会被过滤掉不参与对比
-#### Support to ignore the comparison of some tables, the specific configuration, please create a .dbignore file in the execution directory, which uses the regular way to write the filter rules, the conditions will be filtered out and will not participate in the comparison.
+#### 支持忽略部分表的对比，具体配置请在执行目录下创建.dbignore文件，里面使用[minimatch](https://www.npmjs.com/package/minimatch)写过滤规则，满足条件的就会被过滤掉不参与对比
+#### Support to ignore the comparison of some tables, the specific configuration, please create a .dbignore file in the execution directory, which uses the [minimatch](https://www.npmjs.com/package/minimatch) way to write the filter rules, the conditions will be filtered out and will not participate in the comparison.
 ```
   -i --ignore
 ```  
