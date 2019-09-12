@@ -30,7 +30,7 @@
   "author": "armyliao",
   "license": "ISC",
   "repository": {
-    "type": "git",
+    "index_type": "git",
     "url": "https://github.com/mybediffcult/mysqldiff"
   }
 }
